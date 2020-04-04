@@ -5,6 +5,7 @@
     <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase-messaging.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/4.13.0/firebase-database.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.13.0/firebase-auth.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script>
         /*firebase.initializeApp({
@@ -21,7 +22,7 @@
 	};
 	firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
-        function initFirebaseMessagingRegistration() {
+        function initFirebaseMessagingRegistration(userMail) {
             messaging
                 .requestPermission()
                 .then(function () {
@@ -31,8 +32,9 @@
                 })
                 .then(function (token) {
                     // print the token on the HTML page
-                    tokenElement.innerHTML = "Token is " + token;
-					insertContact("TEST", {registrationToken: token});
+                   // tokenElement.innerHTML = "Token is " + token;
+					insertContact(userMail, {registrationToken: token});
+					launchApp(userMail);
 					console.log(token);
                 })
                 .catch(function (err) {
@@ -61,7 +63,14 @@
 		insert.once('value', function(snapshot){
 			console.log(snapshot.key);
 		});	
-	}		
+	}
+	function inqContact(callback){
+		var source = 'chat_contacts';
+		firebase.database().ref(source).once('value', function(snapshot){
+			var profileData = snapshot.val();
+			callback(profileData);
+		});
+	}
     </script>
 <style>
 	table, th, td {
@@ -86,17 +95,101 @@
         tokenElement = document.getElementById("token")
         notificationElement = document.getElementById("notification")
         errorElement = document.getElementById("error")
-		initFirebaseMessagingRegistration();
+		
     </script>
+<button onclick="initMessagingRegistration()">Registration</button>
+<div id="dvTable"></div>
+<script>
+function initMessagingRegistration(){
+	var provider = new firebase.auth.GoogleAuthProvider();
+	provider.setCustomParameters({
+	  prompt: 'select_account'
+	});
+	firebase.auth().signInWithPopup(provider).then(function(result) {
+	//	console.log(result);
+		initFirebaseMessagingRegistration(btoa(result.user.email));
+	});
+}
+   function GenerateTable(customers) {
+        //Build an array containing Customer records.
+        /*var customers = new Array();
+        customers.push(["Customer Id", "Name", "Country"]);
+        customers.push([1, "John Hammond", "United States"]);
+        customers.push([2, "Mudassar Khan", "India"]);
+        customers.push([3, "Suzanne Mathews", "France"]);
+        customers.push([4, "Robert Schidner", "Russia"]);*/
+ 
+        //Create a HTML Table element.
+        var table = document.createElement("TABLE");
+        table.border = "1";
+ 
+        //Get the count of columns.
+        var columnCount = customers[0].length;
+ 
+        //Add the header row.
+        var row = table.insertRow(-1);
+        for (var i = 0; i < columnCount; i++) {
+            var headerCell = document.createElement("TH");
+            headerCell.innerHTML = customers[0][i];
+            row.appendChild(headerCell);
+        }
+ 
+        //Add the data rows.
+        for (var i = 1; i < customers.length; i++) {
+            row = table.insertRow(-1);
+			var rowData = customers[i];
+			row.onclick=function(){sendNotify(rowData);};
+            for (var j = 0; j < columnCount; j++) {
+                var cell = row.insertCell(-1);
+                cell.innerHTML = customers[i][j];
+            }
+        }
+ 
+        var dvTable = document.getElementById("dvTable");
+        dvTable.innerHTML = "";
+        dvTable.appendChild(table);
+    }
 
-<table style="width:100%">
-  <tr>
-    <th>Name</th>
-    <th colspan="2">Telephone</th>
-  </tr>
-  <tr>
-    <td>Bill Gates</td>
-    <td>55577854</td>
-  </tr>
-</table>
+function sendNotify(row){
+	console.log(row[2]);
+	$.post("/send",
+	  {
+		  "notification": {
+			"title": "Portugal vs. Denmark",
+			"body": "Testing",
+			"icon": "firebase-logo.png",
+			"click_action": "http://localhost:8081"
+		  },
+		  "to": row[2]
+		},
+	  function(data, status){
+		alert("Data: " + data + "\nStatus: " + status);
+	  });
+}
+function appStartUp(){
+	var user = firebase.auth().currentUser;
+	if (user) {
+	  // User is signed in.
+	  initFirebaseMessagingRegistration(btoa(user.email));
+	} else {
+	  // No user is signed in.
+	  
+	}
+}
+function launchApp(userMail){
+	inqContact(function(results){
+		var customers = new Array();
+		customers.push(["Customer Id", "Status", "Token"]);
+		var idx=1;
+		for(var key in results){
+			if(key === userMail)
+				continue;
+			var customer = results[key];
+			customers.push([key, '<span style="cursor:pointer;"><font color="blue"><U>Call</U></font></span>', customer.registrationToken]);			
+		}
+		GenerateTable(customers);
+	});
+}
+appStartUp();
+</script>
 </html>
