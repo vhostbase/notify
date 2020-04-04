@@ -152,8 +152,7 @@ function initMessagingRegistration(){
 
 function sendNotify(row){
 	console.log(row[2]);
-	$.post("/send",
-	  {
+	var reqData = {
 		  "notification": {
 			"title": "Portugal vs. Denmark",
 			"body": "Testing",
@@ -161,10 +160,18 @@ function sendNotify(row){
 			"click_action": "http://localhost:8081"
 		  },
 		  "to": row[2]
-		},
-	  function(data, status){
-		alert("Data: " + data + "\nStatus: " + status);
-	  });
+		};
+$.ajax({
+    type: "POST",
+    url: "/send",
+    data: JSON.stringify(reqData),
+    contentType: "application/json; charset=utf-8",
+    dataType: "json",
+    success: function(data){alert(data);},
+    failure: function(errMsg) {
+        alert(errMsg);
+    }
+});
 }
 function appStartUp(){
 	var user = firebase.auth().currentUser;

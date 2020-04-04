@@ -22,6 +22,7 @@ function sendMessage(){
 			  },
 			  "to": profileData.registrationToken
 			},
+		dataType: "json",
 		  function(data, status){
 			alert("Data: " + data + "\nStatus: " + status);
 		  });
