@@ -192,7 +192,7 @@ function launchApp(userMail){
 			if(key === userMail)
 				continue;
 			var customer = results[key];
-			customers.push([key, '<span style="cursor:pointer;"><font color="blue"><U>Call</U></font></span>', customer.registrationToken]);			
+			customers.push([atob(key), '<span style="cursor:pointer;"><font color="blue"><U>Call</U></font></span>', customer.registrationToken]);			
 		}
 		GenerateTable(customers);
 	});
