@@ -26,7 +26,7 @@
             messaging
                 .requestPermission()
                 .then(function () {
-                    messageElement.innerHTML = "Got notification permission";
+                    //messageElement.innerHTML = "Got notification permission";
                     console.log("Got notification permission");
                     return messaging.getToken();
                 })
@@ -98,60 +98,51 @@
 		
     </script>
 <button onclick="initMessagingRegistration()">Registration</button>
+<button disabled class="mdl-button mdl-js-button mdl-button--raised" id="quickstart-sign-in">Sign in with Google</button>
 <div id="dvTable"></div>
 <script>
 function initMessagingRegistration(){
-	var provider = new firebase.auth.GoogleAuthProvider();
+	/*var provider = new firebase.auth.GoogleAuthProvider();
 	provider.setCustomParameters({
 	  prompt: 'select_account'
 	});
 	firebase.auth().signInWithPopup(provider).then(function(result) {
 	//	console.log(result);
 		initFirebaseMessagingRegistration(btoa(result.user.email));
-	});
+	});*/
+	var user = firebase.auth().currentUser;
+	initFirebaseMessagingRegistration(btoa(user.email));
 }
-   function GenerateTable(customers) {
-        //Build an array containing Customer records.
-        /*var customers = new Array();
-        customers.push(["Customer Id", "Name", "Country"]);
-        customers.push([1, "John Hammond", "United States"]);
-        customers.push([2, "Mudassar Khan", "India"]);
-        customers.push([3, "Suzanne Mathews", "France"]);
-        customers.push([4, "Robert Schidner", "Russia"]);*/
- 
-        //Create a HTML Table element.
-        var table = document.createElement("TABLE");
-        table.border = "1";
- 
+ function GenerateTable(customers, rowSelectCallback) {
+	 var table = $('<table id="callers" border="1"></table>');
         //Get the count of columns.
         var columnCount = customers[0].length;
- 
-        //Add the header row.
-        var row = table.insertRow(-1);
+		//Add the header row.
+		var header = '<tr>';
         for (var i = 0; i < columnCount; i++) {
-            var headerCell = document.createElement("TH");
-            headerCell.innerHTML = customers[0][i];
-            row.appendChild(headerCell);
+			header += '<th>'+customers[0][i]+'</th>';            
         }
- 
-        //Add the data rows.
+		header +='</tr>';
+		table.append($(header));
+//Add the data rows.
+		var data = '';
         for (var i = 1; i < customers.length; i++) {
-            row = table.insertRow(-1);
-			var rowData = customers[i];
-			row.onclick=function(){sendNotify(rowData);};
-            for (var j = 0; j < columnCount; j++) {
-                var cell = row.insertCell(-1);
-                cell.innerHTML = customers[i][j];
-            }
-        }
- 
-        var dvTable = document.getElementById("dvTable");
-        dvTable.innerHTML = "";
-        dvTable.appendChild(table);
-    }
+			data += '<tr>';
+			for (var j = 0; j < columnCount; j++) {
+				data += '<td>'+customers[i][j]+'</td>';
+			}
+			data += '</tr>';
+		}
+		var tr = $(data);
+		tr.click(sendNotify);
+		table.append(tr);
+		$('#dvTable').empty();
+		$('#dvTable').append(table);
 
+	}
 function sendNotify(row){
-	console.log(row[2]);
+	var id = $(this).closest("tr").find('td:eq(2)').text();
+	console.log(id);
 	var reqData = {
 		  "notification": {
 			"title": "Portugal vs. Denmark",
@@ -159,7 +150,7 @@ function sendNotify(row){
 			"icon": "firebase-logo.png",
 			"click_action": "http://localhost:8081"
 		  },
-		  "to": row[2]
+		  "to": id
 		};
 $.ajax({
     type: "POST",
@@ -173,7 +164,7 @@ $.ajax({
     }
 });
 }
-function appStartUp(){
+function appStartUp2(){
 	var user = firebase.auth().currentUser;
 	if (user) {
 	  // User is signed in.
@@ -197,6 +188,97 @@ function launchApp(userMail){
 		GenerateTable(customers);
 	});
 }
+function appStartUp(){
+      // Result from Redirect auth flow.
+      // [START getidptoken]
+      firebase.auth().getRedirectResult().then(function(result) {
+        if (result.credential) {
+          // This gives you a Google Access Token. You can use it to access the Google API.
+          var token = result.credential.accessToken;
+          // [START_EXCLUDE]
+          console.log(token);
+        } else {
+          //document.getElementById('quickstart-oauthtoken').textContent = 'null';
+          // [END_EXCLUDE]
+        }
+        // The signed-in user info.
+        var user = result.user;
+      }).catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+        // [START_EXCLUDE]
+        if (errorCode === 'auth/account-exists-with-different-credential') {
+          alert('You have already signed up with a different auth provider for that email.');
+          // If you are using multiple auth providers on your app you should handle linking
+          // the user's accounts here.
+        } else {
+          console.error(error);
+        }
+        // [END_EXCLUDE]
+      });
+      // [END getidptoken]
+
+      // Listening for auth state changes.
+      // [START authstatelistener]
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+          // User is signed in.
+          var displayName = user.displayName;
+          var email = user.email;
+          var emailVerified = user.emailVerified;
+          var photoURL = user.photoURL;
+          var isAnonymous = user.isAnonymous;
+          var uid = user.uid;
+          var providerData = user.providerData;
+          // [START_EXCLUDE]
+          //document.getElementById('quickstart-sign-in-status').textContent = 'Signed in';
+          document.getElementById('quickstart-sign-in').textContent = 'Sign out';
+          //document.getElementById('quickstart-account-details').textContent = JSON.stringify(user, null, '  ');
+          // [END_EXCLUDE]
+        } else {
+          // User is signed out.
+          // [START_EXCLUDE]
+          //document.getElementById('quickstart-sign-in-status').textContent = 'Signed out';
+          document.getElementById('quickstart-sign-in').textContent = 'Sign in with Google';
+          //document.getElementById('quickstart-account-details').textContent = 'null';
+          //document.getElementById('quickstart-oauthtoken').textContent = 'null';
+          // [END_EXCLUDE]
+        }
+        // [START_EXCLUDE]
+        document.getElementById('quickstart-sign-in').disabled = false;
+        // [END_EXCLUDE]
+      });
+      // [END authstatelistener]
+
+      document.getElementById('quickstart-sign-in').addEventListener('click', toggleSignIn, false);
+}
+    // [START buttoncallback]
+    function toggleSignIn() {
+      if (!firebase.auth().currentUser) {
+        // [START createprovider]
+        var provider = new firebase.auth.GoogleAuthProvider();
+        // [END createprovider]
+        // [START addscopes]
+        provider.addScope('https://www.googleapis.com/auth/plus.login');
+        // [END addscopes]
+        // [START signin]
+        firebase.auth().signInWithRedirect(provider);
+        // [END signin]
+      } else {
+        // [START signout]
+        firebase.auth().signOut();
+        // [END signout]
+      }
+      // [START_EXCLUDE]
+      document.getElementById('quickstart-sign-in').disabled = true;
+      // [END_EXCLUDE]
+    }
+    // [END buttoncallback]
 appStartUp();
 </script>
 </html>
