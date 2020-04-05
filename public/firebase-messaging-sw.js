@@ -23,9 +23,46 @@ messaging.setBackgroundMessageHandler(function (payload) {
     const notificationTitle = notification.title;
     const notificationOptions = {
         body: notification.body,
-        icon: notification.icon
+        icon: notification.icon,
+		vibrate: [100, 50, 100],
+		actions: [{
+          action: 'coffee-action',
+          title: 'Coffee',
+          icon: '/images/demos/action-1-128x128.png'
+        },
+        {
+          action: 'doughnut-action',
+          title: 'Doughnut',
+          icon: '/images/demos/action-2-128x128.png'
+        },
+        {
+          action: 'gramophone-action',
+          title: 'gramophone',
+          icon: '/images/demos/action-3-128x128.png'
+        },
+        {
+          action: 'atom-action',
+          title: 'Atom',
+          icon: '/images/demos/action-4-128x128.png'
+        }]
     };
-
+	//window.open();
     return self.registration.showNotification(notificationTitle,
         notificationOptions);
+
+/*const promiseChain = clients
+    .matchAll({
+      type: "window",
+      includeUncontrolled: true
+    })
+    .then(windowClients => {
+      for (let i = 0; i < windowClients.length; i++) {
+        const windowClient = windowClients[i];
+        windowClient.postMessage(payload);
+      }
+    })
+    .then(() => {
+      return registration.showNotification("my notification title");
+    });
+  return promiseChain;*/
 });
